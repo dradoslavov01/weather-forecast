@@ -1,13 +1,20 @@
 import { useCallback, useState } from "react";
 import { AlertColor, Container, Typography } from "@mui/material";
-import { SearchBar, LocationButton } from "@components";
+import {
+  SearchBar,
+  LocationButton,
+  ForecastList,
+  HourlyForecast,
+} from "@components";
 import { useWeather, useGeolocation } from "@hooks";
+import { DailyForecast } from "types/weather";
 
 function App() {
   const { loading: geoLoading, getLocation } = useGeolocation();
 
-  const { fetchByCity, loading } = useWeather();
+  const { fetchByCity, cityName, forecasts, loading } = useWeather();
 
+  const [selectedDay, setSelectedDay] = useState<DailyForecast | null>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -61,6 +68,19 @@ function App() {
         onClick={handleLocationClick}
         loading={geoLoading}
         disabled={loading}
+      />
+
+      <ForecastList
+        forecasts={forecasts}
+        loading={loading}
+        onDayClick={(forecast: DailyForecast) => setSelectedDay(forecast)}
+        cityName={cityName}
+      />
+
+      <HourlyForecast
+        open={selectedDay !== null}
+        forecast={selectedDay}
+        onClose={() => setSelectedDay(null)}
       />
     </Container>
   );
