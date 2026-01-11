@@ -1,5 +1,11 @@
-import { useCallback, useState } from "react";
-import { AlertColor, Container, Typography } from "@mui/material";
+import { useCallback, useEffect, useState } from "react";
+import {
+  Alert,
+  AlertColor,
+  Container,
+  Snackbar,
+  Typography,
+} from "@mui/material";
 import {
   SearchBar,
   LocationButton,
@@ -10,9 +16,21 @@ import { useWeather, useGeolocation } from "@hooks";
 import { DailyForecast } from "types/weather";
 
 function App() {
-  const { loading: geoLoading, getLocation } = useGeolocation();
+  const {
+    forecasts,
+    loading,
+    error,
+    cityName,
+    fetchByCoordinates,
+    fetchByCity,
+  } = useWeather();
 
-  const { fetchByCity, cityName, forecasts, loading } = useWeather();
+  const {
+    coordinates,
+    loading: geoLoading,
+    error: geoError,
+    getLocation,
+  } = useGeolocation();
 
   const [selectedDay, setSelectedDay] = useState<DailyForecast | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -51,6 +69,41 @@ function App() {
     }
   };
 
+  const handleCloseSnackbar = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
+
+  useEffect(() => {
+    const handleLocationCoordinates = async () => {
+      if (coordinates) {
+        try {
+          await fetchByCoordinates(coordinates);
+        } catch (err) {
+          showSnackbar(
+            err instanceof Error ? err.message : "Failed to fetch weather data",
+            "error"
+          );
+        }
+      }
+    };
+
+    if (coordinates && !geoLoading) {
+      handleLocationCoordinates();
+    }
+  }, [coordinates, geoLoading, showSnackbar, fetchByCoordinates]);
+
+  useEffect(() => {
+    if (geoError) {
+      showSnackbar(geoError, "error");
+    }
+  }, [geoError, showSnackbar]);
+
+  useEffect(() => {
+    if (error) {
+      showSnackbar(error, "error");
+    }
+  }, [error, showSnackbar]);
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography
@@ -82,6 +135,21 @@ function App() {
         forecast={selectedDay}
         onClose={() => setSelectedDay(null)}
       />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
