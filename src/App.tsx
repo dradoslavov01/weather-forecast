@@ -1,9 +1,11 @@
 import { useCallback, useState } from "react";
 import { AlertColor, Container, Typography } from "@mui/material";
-import { SearchBar } from "@components";
-import { useWeather } from "@hooks";
+import { SearchBar, LocationButton } from "@components";
+import { useWeather, useGeolocation } from "@hooks";
 
 function App() {
+  const { loading: geoLoading, getLocation } = useGeolocation();
+
   const { fetchByCity, loading } = useWeather();
 
   const [snackbar, setSnackbar] = useState<{
@@ -26,6 +28,10 @@ function App() {
     },
     []
   );
+
+  const handleLocationClick = async () => {
+    await getLocation();
+  };
 
   const handleCitySearch = async (city: string) => {
     try {
@@ -51,6 +57,11 @@ function App() {
       </Typography>
 
       <SearchBar onSearch={handleCitySearch} loading={loading} />
+      <LocationButton
+        onClick={handleLocationClick}
+        loading={geoLoading}
+        disabled={loading}
+      />
     </Container>
   );
 }
